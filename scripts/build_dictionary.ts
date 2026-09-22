@@ -22,6 +22,8 @@ const CYRILLIC_FILES = [
 
 const EMOJI_FILES = ["hapin_emoji.dict.yaml"] as const;
 
+export const DEFAULT_LANGUAGE_TAGS = ["zh-CN", "zh-TW"] as const;
+
 export interface Entry {
   shortcut: string;
   word: string;
@@ -32,7 +34,7 @@ export interface Entry {
 interface Arguments {
   sourceDir: string;
   outputDir: string;
-  languageTag: string;
+  languageTags: string[];
 }
 
 export function readRimeEntries(path: string): Array<[word: string, code: string]> {
@@ -88,10 +90,7 @@ function addEntries(
   }
 }
 
-export function buildEntries(sourceDir: string, languageTag = ""): Entry[] {
-  if (/[\t\r\n]/u.test(languageTag)) {
-    throw new Error("language tag cannot contain tabs or newlines");
-  }
+function buildEntriesForLanguage(sourceDir: string, languageTag: string): Entry[] {
   const entries: Entry[] = [];
   addEntries(entries, sourceDir, ARABIC_FILES, "u", languageTag);
   addEntries(entries, sourceDir, CYRILLIC_FILES, "v", languageTag);
@@ -106,8 +105,26 @@ export function buildEntries(sourceDir: string, languageTag = ""): Entry[] {
     })),
   );
 
+  return entries;
+}
+
+export function buildEntries(
+  sourceDir: string,
+  languageTags: readonly string[] = DEFAULT_LANGUAGE_TAGS,
+): Entry[] {
+  if (languageTags.length === 0) {
+    throw new Error("at least one language tag is required");
+  }
+  for (const languageTag of languageTags) {
+    if (/[\t\r\n]/u.test(languageTag)) {
+      throw new Error("language tag cannot contain tabs or newlines");
+    }
+  }
+
   const seen = new Set<string>();
-  return entries.filter((entry) => {
+  return languageTags.flatMap((languageTag) =>
+    buildEntriesForLanguage(sourceDir, languageTag),
+  ).filter((entry) => {
     const key = JSON.stringify(entry);
     if (seen.has(key)) {
       return false;
@@ -139,9 +156,9 @@ export function createDictionaryZip(dictionaryBytes: Uint8Array): Uint8Array {
 export function build(
   sourceDir: string,
   outputDir: string,
-  languageTag = "",
+  languageTags: readonly string[] = DEFAULT_LANGUAGE_TAGS,
 ): Readonly<Record<"u" | "v", number>> {
-  const entries = buildEntries(sourceDir, languageTag);
+  const entries = buildEntries(sourceDir, languageTags);
   const dictionaryBytes = serialize(entries);
   mkdirSync(outputDir, { recursive: true });
   writeFileSync(resolve(outputDir, "dictionary.txt"), dictionaryBytes);
@@ -160,24 +177,31 @@ function parseArguments(argv: readonly string[]): Arguments {
   const result: Arguments = {
     sourceDir: "vendor/rime-cloverpinyin/src",
     outputDir: "dist",
-    languageTag: "",
-  };
-  const fieldByFlag: Record<string, keyof Arguments> = {
-    "--source-dir": "sourceDir",
-    "--output-dir": "outputDir",
-    "--language-tag": "languageTag",
+    languageTags: [],
   };
 
   for (let index = 0; index < argv.length; index += 2) {
     const flag = argv[index];
     const value = argv[index + 1];
-    const field = flag === undefined ? undefined : fieldByFlag[flag];
-    if (field === undefined || value === undefined) {
+    if (value === undefined) {
       throw new Error(
-        "usage: build_dictionary.ts [--source-dir DIR] [--output-dir DIR] [--language-tag TAG]",
+        "usage: build_dictionary.ts [--source-dir DIR] [--output-dir DIR] [--language-tag TAG ...]",
       );
     }
-    result[field] = value;
+    if (flag === "--source-dir") {
+      result.sourceDir = value;
+    } else if (flag === "--output-dir") {
+      result.outputDir = value;
+    } else if (flag === "--language-tag") {
+      result.languageTags.push(value);
+    } else {
+      throw new Error(
+        "usage: build_dictionary.ts [--source-dir DIR] [--output-dir DIR] [--language-tag TAG ...]",
+      );
+    }
+  }
+  if (result.languageTags.length === 0) {
+    result.languageTags.push(...DEFAULT_LANGUAGE_TAGS);
   }
   return result;
 }
@@ -189,9 +213,9 @@ function isMainModule(): boolean {
 if (isMainModule()) {
   try {
     const args = parseArguments(process.argv.slice(2));
-    const counts = build(args.sourceDir, args.outputDir, args.languageTag);
+    const counts = build(args.sourceDir, args.outputDir, args.languageTags);
     console.log(
-      `Built ${counts.u + counts.v} entries (u: ${counts.u}, v: ${counts.v}) in ${args.outputDir}`,
+      `Built ${counts.u + counts.v} entries (u: ${counts.u}, v: ${counts.v}) for ${args.languageTags.join(", ")} in ${args.outputDir}`,
     );
   } catch (error) {
     console.error(`error: ${error instanceof Error ? error.message : String(error)}`);

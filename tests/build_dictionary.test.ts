@@ -7,6 +7,7 @@ import test from "node:test";
 import { strFromU8, unzipSync } from "fflate";
 
 import {
+  DEFAULT_LANGUAGE_TAGS,
   HEADER,
   build,
   buildEntries,
@@ -41,8 +42,26 @@ test("makes emoji available in both modes", () => {
 });
 
 test("produces the expected number of unique entries", () => {
-  assert.equal(entries.length, 8692);
+  assert.equal(entries.length, 17384);
   assert.equal(new Set(entries.map((entry) => JSON.stringify(entry))).size, entries.length);
+});
+
+test("limits every entry to Simplified and Traditional Chinese", () => {
+  assert.deepEqual(
+    [...new Set(entries.map(({ languageTag }) => languageTag))].sort(),
+    [...DEFAULT_LANGUAGE_TAGS].sort(),
+  );
+  for (const languageTag of DEFAULT_LANGUAGE_TAGS) {
+    assert.equal(
+      entries.some(
+        (entry) =>
+          entry.shortcut === "usalyemyetsez" &&
+          entry.word === "سالەمەتسىز" &&
+          entry.languageTag === languageTag,
+      ),
+      true,
+    );
+  }
 });
 
 test("serializes Gboard v2 rows with four columns", () => {
