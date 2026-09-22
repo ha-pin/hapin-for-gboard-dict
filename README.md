@@ -5,12 +5,23 @@
 - `u` 开头：输入阿拉伯文字的哈萨克语；
 - `v` 开头：输入西里尔文字的哈萨克语；
 - emoji：同一助记码同时支持 `u`、`v` 两种前缀。
+- 仅在 Gboard 简体中文（`zh-CN`）或繁体中文（`zh-TW`）键盘下生效；
+- 两种中文语言分别打包，不会混在同一个 TXT 或 ZIP 中。
 
 词库来源于 [`ha-pin/rime-cloverpinyin`](https://github.com/ha-pin/rime-cloverpinyin/tree/master/src)，固定在提交 `27d3cab2b02b39857fe872c9a3b5bbbd9122f597`。本仓库通过 GitHub Releases 提供可导入文件，并保留可重复构建脚本和上游原始数据。
 
-## 使用方法
+## 下载
 
-1. 从 [最新 Release](https://github.com/ha-pin/hapin-for-gboard-dict/releases/latest) 下载需要的文件，不要解压：
+| 适用键盘 | Gboard 导入包 | 纯文本词典 |
+| --- | --- | --- |
+| 简体中文（`zh-CN`） | [`PersonalDictionary-hapin-zh-CN.zip`](https://github.com/ha-pin/hapin-for-gboard-dict/releases/latest/download/PersonalDictionary-hapin-zh-CN.zip) | [`dictionary-zh-CN.txt`](https://github.com/ha-pin/hapin-for-gboard-dict/releases/latest/download/dictionary-zh-CN.txt) |
+| 繁体中文（`zh-TW`） | [`PersonalDictionary-hapin-zh-TW.zip`](https://github.com/ha-pin/hapin-for-gboard-dict/releases/latest/download/PersonalDictionary-hapin-zh-TW.zip) | [`dictionary-zh-TW.txt`](https://github.com/ha-pin/hapin-for-gboard-dict/releases/latest/download/dictionary-zh-TW.txt) |
+
+通常只需下载 ZIP。TXT 用于检查内容或供其他工具二次转换。每个语言包包含 8,692 条去重记录。
+
+## 安装
+
+1. 从上表或[最新 Release](https://github.com/ha-pin/hapin-for-gboard-dict/releases/latest) 下载需要的文件，不要解压：
    - 简体中文使用 `PersonalDictionary-hapin-zh-CN.zip`；
    - 繁体中文使用 `PersonalDictionary-hapin-zh-TW.zip`；
    - 两种键盘都需要时，分别下载并导入两个 ZIP。
@@ -32,12 +43,22 @@
 > [!NOTE]
 > 这是 Gboard 的“个人字典快捷短语”方案，不是对闭源 Gboard 输入引擎的修改。通常要输入完整编码后从候选栏选择结果；候选排序和一次显示多少个同码词由 Gboard 决定。
 
+## 更新或删除已导入词典
+
+Gboard 不保存导入批次信息，也没有按 ZIP 整批卸载的功能。直接导入新版不会替换旧版，反而可能产生重复记录。
+
+- 删除少量词条：进入 **Gboard 设置 → 字典 → 个人字典 → 简体中文/繁体中文**，打开词条后点垃圾桶。
+- 删除整套词典：先导出需要保留的个人词条，再进入 Android **设置 → 应用 → Gboard → 存储和缓存 → 清除存储空间/清除应用数据**。这会同时清除 Gboard 的其他个人词条、学习记录和偏好设置，之后需要重新配置 Gboard。
+- **删除已学习的字词** 只针对 Gboard 从输入行为中学习的内容，不应当作导入词典的卸载功能。
+
+若只是从单一中文包切换到另一中文包，仍建议先清除旧词条，再导入目标 ZIP。
+
 ## 重新构建
 
 需要 Node.js 22 与 pnpm：
 
 ```sh
-pnpm install
+pnpm install --frozen-lockfile
 make build
 make typecheck test
 ```
@@ -53,7 +74,7 @@ make typecheck test
 
 `dist/` 是本地构建目录，已被 Git 忽略。每次提交或合并到 `main` 后，[GitHub Actions](.github/workflows/release.yml) 会重新构建并测试词库，以 `build-<运行编号>` 标签创建 Release，上传两套 ZIP、两份 TXT 和 `SHA256SUMS`。
 
-默认把每条词条分别绑定到 `zh-CN`（简体中文）和 `zh-TW`（繁体中文），因此只在这两种 Gboard 中文键盘下生效，不会污染其他语言的候选。请确保 Gboard 已添加对应的中文键盘。
+默认分别构建 `zh-CN`（简体中文）和 `zh-TW`（繁体中文），因此只在这两种 Gboard 中文键盘下生效，不会污染其他语言的候选。每个语言标签始终生成独立文件。
 
 如需改为其他单一语言，可运行：
 
