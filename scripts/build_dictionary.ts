@@ -1,6 +1,6 @@
 #!/usr/bin/env -S node --import tsx
 
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -29,6 +29,14 @@ export interface Entry {
   word: string;
   languageTag: string;
   posTag: string;
+}
+
+export interface BuildResult {
+  languageTag: string;
+  dictionaryFilename: string;
+  zipFilename: string;
+  u: number;
+  v: number;
 }
 
 interface Arguments {
@@ -157,20 +165,44 @@ export function build(
   sourceDir: string,
   outputDir: string,
   languageTags: readonly string[] = DEFAULT_LANGUAGE_TAGS,
-): Readonly<Record<"u" | "v", number>> {
-  const entries = buildEntries(sourceDir, languageTags);
-  const dictionaryBytes = serialize(entries);
+): BuildResult[] {
   mkdirSync(outputDir, { recursive: true });
-  writeFileSync(resolve(outputDir, "dictionary.txt"), dictionaryBytes);
-  writeFileSync(
-    resolve(outputDir, "PersonalDictionary-hapin.zip"),
-    createDictionaryZip(dictionaryBytes),
-  );
+  // The output directory is generated. Remove both legacy mixed artifacts and
+  // split artifacts from earlier builds so stale languages are never shipped.
+  for (const filename of readdirSync(outputDir)) {
+    if (
+      filename === "dictionary.txt" ||
+      filename === "PersonalDictionary-hapin.zip" ||
+      /^dictionary-.+\.txt$/u.test(filename) ||
+      /^PersonalDictionary-hapin-.+\.zip$/u.test(filename)
+    ) {
+      rmSync(resolve(outputDir, filename), { force: true });
+    }
+  }
 
-  return {
-    u: entries.filter(({ shortcut }) => shortcut.startsWith("u")).length,
-    v: entries.filter(({ shortcut }) => shortcut.startsWith("v")).length,
-  };
+  return [...new Set(languageTags)].map((languageTag) => {
+    const entries = buildEntries(sourceDir, [languageTag]);
+    const dictionaryBytes = serialize(entries);
+    const filenameTag = languageTag || "all-languages";
+    if (!/^[A-Za-z0-9._-]+$/u.test(filenameTag)) {
+      throw new Error(`language tag is not safe for a filename: ${languageTag}`);
+    }
+    const dictionaryFilename = `dictionary-${filenameTag}.txt`;
+    const zipFilename = `PersonalDictionary-hapin-${filenameTag}.zip`;
+    writeFileSync(resolve(outputDir, dictionaryFilename), dictionaryBytes);
+    writeFileSync(
+      resolve(outputDir, zipFilename),
+      createDictionaryZip(dictionaryBytes),
+    );
+
+    return {
+      languageTag,
+      dictionaryFilename,
+      zipFilename,
+      u: entries.filter(({ shortcut }) => shortcut.startsWith("u")).length,
+      v: entries.filter(({ shortcut }) => shortcut.startsWith("v")).length,
+    };
+  });
 }
 
 function parseArguments(argv: readonly string[]): Arguments {
@@ -213,10 +245,12 @@ function isMainModule(): boolean {
 if (isMainModule()) {
   try {
     const args = parseArguments(process.argv.slice(2));
-    const counts = build(args.sourceDir, args.outputDir, args.languageTags);
-    console.log(
-      `Built ${counts.u + counts.v} entries (u: ${counts.u}, v: ${counts.v}) for ${args.languageTags.join(", ")} in ${args.outputDir}`,
-    );
+    const results = build(args.sourceDir, args.outputDir, args.languageTags);
+    for (const result of results) {
+      console.log(
+        `Built ${result.u + result.v} entries (u: ${result.u}, v: ${result.v}) for ${result.languageTag || "all languages"}: ${result.dictionaryFilename}, ${result.zipFilename}`,
+      );
+    }
   } catch (error) {
     console.error(`error: ${error instanceof Error ? error.message : String(error)}`);
     process.exitCode = 1;

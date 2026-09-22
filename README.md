@@ -10,10 +10,13 @@
 
 ## 使用方法
 
-1. 从 [最新 Release](https://github.com/ha-pin/hapin-for-gboard-dict/releases/latest) 下载 `PersonalDictionary-hapin.zip` 到 Android 手机，不要解压。
-2. 确保 Gboard 已添加简体中文和繁体中文键盘，再打开 **Gboard 设置 → 字典 → 个人字典 → 所有语言**。
-3. 点右上角三点菜单，选择 **导入**，然后选择该 ZIP 文件。文件内的语言标签会把词条限定到 `zh-CN` 和 `zh-TW`。
-4. 切换到简体中文或繁体中文的拼音等英文字母布局，输入完整快捷码，在候选栏选择对应文字或 emoji；其他语言键盘不会使用这些词条。
+1. 从 [最新 Release](https://github.com/ha-pin/hapin-for-gboard-dict/releases/latest) 下载需要的文件，不要解压：
+   - 简体中文使用 `PersonalDictionary-hapin-zh-CN.zip`；
+   - 繁体中文使用 `PersonalDictionary-hapin-zh-TW.zip`；
+   - 两种键盘都需要时，分别下载并导入两个 ZIP。
+2. 确保 Gboard 已添加对应的中文键盘，再打开 **Gboard 设置 → 字典 → 个人字典 → 所有语言**。
+3. 点右上角三点菜单，选择 **导入**，然后选择对应 ZIP。每个文件只包含文件名所示的一个语言标签。
+4. 切换到对应中文键盘的拼音等英文字母布局，输入完整快捷码，在候选栏选择对应文字或 emoji；其他语言键盘不会使用这些词条。
 
 部分 Gboard/Android 版本会把菜单翻译为“单词列表”。若文件选择器单击 ZIP 没有反应，可尝试长按文件后选择“打开”。不要重复导入同一个 ZIP；Gboard 不会自动去重已经存在的个人字典记录。
 
@@ -39,12 +42,16 @@ make build
 make typecheck test
 ```
 
-生成文件：
+默认分别生成两套互不混合的文件：
 
-- `dist/dictionary.txt`：Gboard Dictionary v2 的 UTF-8 TSV；
-- `dist/PersonalDictionary-hapin.zip`：供 Gboard 直接导入，ZIP 根目录内只有 `dictionary.txt`。
+- `dist/dictionary-zh-CN.txt`：仅含简体中文语言标签的 Gboard v2 UTF-8 TSV；
+- `dist/PersonalDictionary-hapin-zh-CN.zip`：简体中文导入包；
+- `dist/dictionary-zh-TW.txt`：仅含繁体中文语言标签的 Gboard v2 UTF-8 TSV；
+- `dist/PersonalDictionary-hapin-zh-TW.zip`：繁体中文导入包。
 
-`dist/` 是本地构建目录，已被 Git 忽略。每次提交或合并到 `main` 后，[GitHub Actions](.github/workflows/release.yml) 会重新构建并测试词库，以 `build-<运行编号>` 标签创建 Release，上传 ZIP、原始 `dictionary.txt` 和 `SHA256SUMS`。
+每个 ZIP 根目录内都只有 Gboard 要求的 `dictionary.txt`，内容与同语言的外部 TXT 完全一致。
+
+`dist/` 是本地构建目录，已被 Git 忽略。每次提交或合并到 `main` 后，[GitHub Actions](.github/workflows/release.yml) 会重新构建并测试词库，以 `build-<运行编号>` 标签创建 Release，上传两套 ZIP、两份 TXT 和 `SHA256SUMS`。
 
 默认把每条词条分别绑定到 `zh-CN`（简体中文）和 `zh-TW`（繁体中文），因此只在这两种 Gboard 中文键盘下生效，不会污染其他语言的候选。请确保 Gboard 已添加对应的中文键盘。
 

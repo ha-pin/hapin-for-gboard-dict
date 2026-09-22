@@ -37,7 +37,7 @@ jobs:
         run: make typecheck test
 
       - name: Create checksums
-        run: sha256sum dist/dictionary.txt dist/PersonalDictionary-hapin.zip > dist/SHA256SUMS
+        run: sha256sum dist/*.txt dist/*.zip > dist/SHA256SUMS
 
       - name: Publish GitHub release
         env:
@@ -50,14 +50,18 @@ jobs:
 
           if gh release view "${RELEASE_TAG}" >/dev/null 2>&1; then
             gh release upload "${RELEASE_TAG}" \
-              dist/PersonalDictionary-hapin.zip \
-              dist/dictionary.txt \
+              dist/PersonalDictionary-hapin-zh-CN.zip \
+              dist/PersonalDictionary-hapin-zh-TW.zip \
+              dist/dictionary-zh-CN.txt \
+              dist/dictionary-zh-TW.txt \
               dist/SHA256SUMS \
               --clobber
           else
             gh release create "${RELEASE_TAG}" \
-              dist/PersonalDictionary-hapin.zip \
-              dist/dictionary.txt \
+              dist/PersonalDictionary-hapin-zh-CN.zip \
+              dist/PersonalDictionary-hapin-zh-TW.zip \
+              dist/dictionary-zh-CN.txt \
+              dist/dictionary-zh-TW.txt \
               dist/SHA256SUMS \
               --target "${GITHUB_SHA}" \
               --title "Hapin Gboard dictionary #${GITHUB_RUN_NUMBER} (${short_sha})" \

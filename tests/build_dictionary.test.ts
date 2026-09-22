@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import test from "node:test";
@@ -72,16 +72,38 @@ test("serializes Gboard v2 rows with four columns", () => {
   assert.equal(rows.every((row) => row.split("\t").length === 4), true);
 });
 
-test("puts only dictionary.txt at the ZIP root", () => {
+test("builds separate TXT and ZIP files for each Chinese language", () => {
   const outputDir = mkdtempSync(resolve(tmpdir(), "hapin-gboard-"));
   try {
-    build(SOURCE_DIR, outputDir);
-    const dictionaryBytes = readFileSync(resolve(outputDir, "dictionary.txt"));
-    const archive = unzipSync(
-      readFileSync(resolve(outputDir, "PersonalDictionary-hapin.zip")),
+    const results = build(SOURCE_DIR, outputDir);
+    assert.deepEqual(
+      readdirSync(outputDir).sort(),
+      [
+        "PersonalDictionary-hapin-zh-CN.zip",
+        "PersonalDictionary-hapin-zh-TW.zip",
+        "dictionary-zh-CN.txt",
+        "dictionary-zh-TW.txt",
+      ],
     );
-    assert.deepEqual(Object.keys(archive), ["dictionary.txt"]);
-    assert.deepEqual(Buffer.from(archive["dictionary.txt"]), dictionaryBytes);
+    assert.deepEqual(
+      results.map(({ languageTag }) => languageTag),
+      [...DEFAULT_LANGUAGE_TAGS],
+    );
+
+    for (const result of results) {
+      const dictionaryBytes = readFileSync(
+        resolve(outputDir, result.dictionaryFilename),
+      );
+      const rows = dictionaryBytes.toString("utf8").split("\n").slice(2, -1);
+      assert.equal(
+        rows.every((row) => row.split("\t")[2] === result.languageTag),
+        true,
+      );
+
+      const archive = unzipSync(readFileSync(resolve(outputDir, result.zipFilename)));
+      assert.deepEqual(Object.keys(archive), ["dictionary.txt"]);
+      assert.deepEqual(Buffer.from(archive["dictionary.txt"]), dictionaryBytes);
+    }
   } finally {
     rmSync(outputDir, { recursive: true, force: true });
   }
