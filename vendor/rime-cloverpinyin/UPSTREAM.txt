@@ -1,0 +1,10 @@
+Source: https://github.com/ha-pin/rime-cloverpinyin
+Commit: 27d3cab2b02b39857fe872c9a3b5bbbd9122f597
+
+SHA-256:
+c92cc47dbe90da7b75c8dec9d94843ce381b9630a11cb22e8cf293f0e77db8ae  src/hapin_arabic_basic.dict.yaml
+5e833895e5bcd16e89f3c237e6b34586d6afb9e4535823dd2b31b0770fe7765c  src/hapin_arabic_basic_3000.extend.dict.yaml
+c766c894f685248717d7e5cf239ea328b2949d75fe15af45e90bdeade24b5188  src/hapin_mixed_cyrillic_basic.dict.yaml
+c491407311a2d65ec98375102c0e566a0c527c01e19915deb40965ee86f17946  src/hapin_mixed_cyrillic_basic_3000.extend.dict.yaml
+120c7b9f00130989aafea0f230d42d92047f66a10b8075656bbbc7737ade56fb  src/hapin_emoji.dict.yaml
+e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118  LICENSE

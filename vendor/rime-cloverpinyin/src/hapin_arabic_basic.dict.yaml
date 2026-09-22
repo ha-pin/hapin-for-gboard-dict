@@ -1,0 +1,50 @@
+# Rime Hapin Arbic dictionary
+# encoding: utf-8
+
+---
+name: hapin_arabic_basic
+version: "1"
+sort: by_weight
+use_preset_vocabulary: false
+...
+
+ا	ua
+ب	ub
+د	ud
+ى	ue
+ە	uye
+ف	uf
+گ	ug
+ع	ugh
+ح	uh
+ھ	uhh
+ي	ui
+ج	uj
+ك	uk
+ل	ul
+م	um
+ن	un
+ڭ	ung
+و	uo
+پ	up
+ق	uq
+ر	ur
+س	us
+ت	ut
+ۇ	uu
+ۆ	uv
+ۋ	uw
+ز	uz
+ش	ush
+چ	uch
+ء	ux
+ٴ	ux
+ءا	uxa
+ءۇ	uxu
+ءۇ	uyu
+ءى	uxe
+ءو	uxo
+ءا	ua
+ءۇ	uu
+ءى	ue
+ءو	uo
